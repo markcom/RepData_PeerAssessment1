@@ -3,17 +3,40 @@ This report was created for the Coursera Reproducible Research Course.
 The initial repository was forked from https://github.com/rdpeng/RepData_PeerAssessment1 .
 The figures are stored in default RStudio location  (PA1_template_files\figure-html)
 
-## Loading and preprocessing the data
-The dataset [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) for this assignement was downloaded on 2015-09-19.
+The environment locale has to be set to EN.
 
-I also add a column with a date/time to the dataset.
+
+```r
+Sys.setlocale("LC_TIME", "English")
+```
+
+```
+## [1] "English_United States.1252"
+```
+
+In the data processing I am using following libraries.
+
+
+```r
+library(plyr)
+library(lattice)
+```
+
+## Loading and preprocessing the data
+The dataset [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) for this assignement was downloaded on 2015-09-20.
+
 
 
 ```r
 download.file('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip', "activity_monitoring_data.zip")
 unzip("activity_monitoring_data.zip")
 allData <- read.csv("activity.csv")
+```
 
+I also add a column with a date/time to the dataset.
+
+
+```r
 times <- paste(allData$interval %/% 100, allData$interval %% 100, "00", sep = ":")
 allData$dateTime <- strptime(paste(allData$date, times) , "%Y-%m-%d %H:%M:%S")
 ```
@@ -23,21 +46,47 @@ I use the plyr library and make a summary dataset containing the data I might ne
 
 
 ```r
-library(plyr)
 dayData <- ddply(allData, ~date, summarize, mean=mean(steps), sd=sd(steps), median=median(steps, na.rm = TRUE), sum=sum(steps))
+```
 
+Now calculate the Median and Mean
+
+```r
 totalMean <- mean(dayData$sum, na.rm = TRUE)
 totalMedian <- median(dayData$sum, na.rm = TRUE)
+```
 
+
+```r
+totalMean
+```
+
+```
+## [1] 10766.19
+```
+
+
+```r
+totalMedian
+```
+
+```
+## [1] 10765
+```
+
+And plot the histogram of total number of steps per day
+
+
+```r
 hist(dayData$sum, breaks = 50, main = "Histogram of total number of steps per day", xlab = "Steps per day", ylab = "Amount of days", col = "blue", xlim = c(0,25000))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
 
 The average number of steps per day is **10766** with the median of **10765**.
 
 ## What is the average daily activity pattern?
-Lets calculate and graph the daily pattern
+Lets calculate and graph the daily pattern. Here is the summary over an interval with its maximum
 
 
 ```r
@@ -45,36 +94,86 @@ intervalData <- ddply(allData, ~interval, summarize, mean=mean(steps, na.rm = TR
 
 maxStepsInInterval <- intervalData[which.max(intervalData$mean),]$interval
 
+maxStepsInInterval
+```
+
+```
+## [1] 835
+```
+
+The plot for the daily activity follows
+
+
+```r
 plot(intervalData$interval, intervalData$mean, type = "l", xlab = "5 min interval", ylab = "Average across all Days", main = "Average number of steps in 5 min Interval", col = "blue")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
 
 **835** is the interval containing the most steps
 
 
 ## Imputing missing values
 
+How many NAs are in the dataset?
 
 
 ```r
 totalNAs <- sum(is.na(allData$steps))
+totalNAs
+```
+
+```
+## [1] 2304
+```
+
+In this step I replace the NA with a mean for the specific interval.
+
+
+```r
 allDataWithoutNAs <- allData
 
 for (i in 1:nrow(allDataWithoutNAs))
     if (is.na(allDataWithoutNAs[i,]$steps)) 
         allDataWithoutNAs[i,]$steps <- round(intervalData[intervalData$interval == allDataWithoutNAs[i,]$interval, ]$mean)
+```
+
+And prepare summary for the graph + compute the Median and Mean of the "corrected" dataset
 
 
+```r
 dayDataWithoutNAs <- ddply(allDataWithoutNAs, ~date, summarize, mean=mean(steps), sd=sd(steps), median=median(steps, na.rm = TRUE), sum=sum(steps))
 
 totalMeanWithoutNAs <- mean(dayDataWithoutNAs$sum, na.rm = TRUE)
 totalMedianWithoutNAs <- median(dayDataWithoutNAs$sum, na.rm = TRUE)
+```
 
+
+```r
+totalMeanWithoutNAs
+```
+
+```
+## [1] 10765.64
+```
+
+
+```r
+totalMedianWithoutNAs
+```
+
+```
+## [1] 10762
+```
+
+Last but not least the histogram of the total amount of steps per day.
+
+
+```r
 hist(dayDataWithoutNAs$sum, breaks = 50, main = "Histogram of total number of steps per day - modified", xlab = "Steps per day", ylab = "Amount of days", col = "red", xlim = c(0,25000))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-17-1.png) 
 
 There are in total **2304** missing values (NAs) in the original dataset.
 My preference would be, not to fill the missing number, however for this assignement I will use the mean calculated for the specific interval over all days.
@@ -84,19 +183,21 @@ The average number of steps per day in the modified dataset is **10765** with th
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-Finally we compare the Means of Week and Weekend days. The locale has to be EN English_United States.1252.
+A summary dataset with weekday/end column is created
 
 
 ```r
-library(lattice)
-
 weekend <- ifelse(weekdays(allData$dateTime) %in% c('Saturday','Sunday'), 'Weekend', 'Weekday')
 allData$weekend <- weekend
 
 intervalDataWeek <- ddply(allData, c('interval', 'weekend'), summarize, mean=mean(steps, na.rm = TRUE))
+```
 
+And the final plots with the mean of steps per weekday/end
+
+
+```r
 xyplot(mean ~ interval | weekend, intervalDataWeek, type = "l", layout = c(1, 2), xlab = "Interval", ylab = "Average number of steps")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
-
+![](PA1_template_files/figure-html/unnamed-chunk-19-1.png) 
