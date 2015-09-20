@@ -28,7 +28,8 @@ The dataset [Activity monitoring data](https://d396qusza40orc.cloudfront.net/rep
 
 
 ```r
-download.file('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip', "activity_monitoring_data.zip")
+download.file('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
+              , "activity_monitoring_data.zip")
 unzip("activity_monitoring_data.zip")
 allData <- read.csv("activity.csv")
 ```
@@ -46,7 +47,11 @@ I use the plyr library and make a summary dataset containing the data I might ne
 
 
 ```r
-dayData <- ddply(allData, ~date, summarize, mean=mean(steps), sd=sd(steps), median=median(steps, na.rm = TRUE), sum=sum(steps))
+dayData <- ddply(allData, ~date, summarize, 
+                 mean=mean(steps),
+                 sd=sd(steps), 
+                 median=median(steps, na.rm = TRUE), 
+                 sum=sum(steps))
 ```
 
 Now calculate the Median and Mean
@@ -78,7 +83,12 @@ And plot the histogram of total number of steps per day
 
 
 ```r
-hist(dayData$sum, breaks = 50, main = "Histogram of total number of steps per day", xlab = "Steps per day", ylab = "Amount of days", col = "blue", xlim = c(0,25000))
+hist(dayData$sum, breaks = 50, 
+     main = "Histogram of total number of steps per day", 
+     xlab = "Steps per day", 
+     ylab = "Amount of days", 
+     col = "blue", 
+     xlim = c(0,25000))
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
@@ -90,7 +100,11 @@ Lets calculate and graph the daily pattern. Here is the summary over an interval
 
 
 ```r
-intervalData <- ddply(allData, ~interval, summarize, mean=mean(steps, na.rm = TRUE), sd=sd(steps, na.rm = TRUE), median=median(steps, na.rm = TRUE), sum=sum(steps, na.rm = TRUE))
+intervalData <- ddply(allData, ~interval, summarize, 
+                      mean=mean(steps, na.rm = TRUE), 
+                      sd=sd(steps, na.rm = TRUE), 
+                      median=median(steps, na.rm = TRUE), 
+                      sum=sum(steps, na.rm = TRUE))
 
 maxStepsInInterval <- intervalData[which.max(intervalData$mean),]$interval
 
@@ -105,7 +119,11 @@ The plot for the daily activity follows
 
 
 ```r
-plot(intervalData$interval, intervalData$mean, type = "l", xlab = "5 min interval", ylab = "Average across all Days", main = "Average number of steps in 5 min Interval", col = "blue")
+plot(intervalData$interval, intervalData$mean, type = "l", 
+     xlab = "5 min interval", 
+     ylab = "Average across all Days", 
+     main = "Average number of steps in 5 min Interval", 
+     col = "blue")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
@@ -135,14 +153,20 @@ allDataWithoutNAs <- allData
 
 for (i in 1:nrow(allDataWithoutNAs))
     if (is.na(allDataWithoutNAs[i,]$steps)) 
-        allDataWithoutNAs[i,]$steps <- round(intervalData[intervalData$interval == allDataWithoutNAs[i,]$interval, ]$mean)
+        allDataWithoutNAs[i,]$steps <-
+    round(intervalData[intervalData$interval ==
+                           allDataWithoutNAs[i,]$interval, ]$mean)
 ```
 
 And prepare summary for the graph + compute the Median and Mean of the "corrected" dataset
 
 
 ```r
-dayDataWithoutNAs <- ddply(allDataWithoutNAs, ~date, summarize, mean=mean(steps), sd=sd(steps), median=median(steps, na.rm = TRUE), sum=sum(steps))
+dayDataWithoutNAs <- ddply(allDataWithoutNAs, ~date, summarize, 
+                           mean=mean(steps), 
+                           sd=sd(steps), 
+                           median=median(steps, na.rm = TRUE), 
+                           sum=sum(steps))
 
 totalMeanWithoutNAs <- mean(dayDataWithoutNAs$sum, na.rm = TRUE)
 totalMedianWithoutNAs <- median(dayDataWithoutNAs$sum, na.rm = TRUE)
@@ -170,7 +194,12 @@ Last but not least the histogram of the total amount of steps per day.
 
 
 ```r
-hist(dayDataWithoutNAs$sum, breaks = 50, main = "Histogram of total number of steps per day - modified", xlab = "Steps per day", ylab = "Amount of days", col = "red", xlim = c(0,25000))
+hist(dayDataWithoutNAs$sum, breaks = 50, 
+     main = "Histogram of total number of steps per day - modified", 
+     xlab = "Steps per day", 
+     ylab = "Amount of days", 
+     col = "red", 
+     xlim = c(0,25000))
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-17-1.png) 
@@ -187,17 +216,22 @@ A summary dataset with weekday/end column is created
 
 
 ```r
-weekend <- ifelse(weekdays(allData$dateTime) %in% c('Saturday','Sunday'), 'Weekend', 'Weekday')
+weekend <- ifelse(weekdays(allData$dateTime) %in% 
+                      c('Saturday','Sunday'), 'Weekend', 'Weekday')
 allData$weekend <- weekend
 
-intervalDataWeek <- ddply(allData, c('interval', 'weekend'), summarize, mean=mean(steps, na.rm = TRUE))
+intervalDataWeek <- ddply(allData, c('interval', 'weekend'), summarize, 
+                          mean=mean(steps, na.rm = TRUE))
 ```
 
 And the final plots with the mean of steps per weekday/end
 
 
 ```r
-xyplot(mean ~ interval | weekend, intervalDataWeek, type = "l", layout = c(1, 2), xlab = "Interval", ylab = "Average number of steps")
+xyplot(mean ~ interval | weekend, intervalDataWeek, type = "l", 
+       layout = c(1, 2), 
+       xlab = "Interval", 
+       ylab = "Average number of steps")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-19-1.png) 
